@@ -255,20 +255,13 @@ public class GameController : MonoBehaviour
     public void ShowPauseGamePanel()
     {
         pauseGamePanel.SetActive(true);
-        // Pause();
     }
 
     
     public void HidePauseGamePanel()
     {
         pauseGamePanel.SetActive(false);
-        // Pause();
     }
-
-    // public void Pause()
-    // {
-        
-    // }
 
     // Переход к первой сцене
     public void GoToHome()
