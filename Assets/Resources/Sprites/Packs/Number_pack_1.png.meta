@@ -4,22 +4,22 @@ TextureImporter:
   internalIDToNameTable:
   - first:
       213: 1422184923334757970
-    second: Number_1
+    second: 1
   - first:
       213: 1808195818850983521
-    second: Number_2
+    second: 2
   - first:
       213: -7900951133411543555
-    second: Number_3
+    second: 3
   - first:
       213: -7398325283844340781
-    second: Number_5
+    second: 5
   - first:
       213: 2267071060405275165
-    second: Number_4
+    second: 4
   - first:
       213: -7015292045520539579
-    second: Number_6
+    second: 6
   - first:
       213: -675344402919758444
     second: Number_7
@@ -72,7 +72,7 @@ TextureImporter:
   spritePivot: {x: 0.5, y: 0.5}
   spritePixelsToUnits: 100
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
-  spriteGenerateFallbackPhysicsShape: 1
+  spriteGenerateFallbackPhysicsShape: 0
   alphaUsage: 1
   alphaIsTransparency: 1
   spriteTessellationDetail: -1
@@ -127,7 +127,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Number_1
+      name: 1
       rect:
         serializedVersion: 2
         x: 5
@@ -148,7 +148,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Number_2
+      name: 2
       rect:
         serializedVersion: 2
         x: 181
@@ -169,7 +169,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Number_3
+      name: 3
       rect:
         serializedVersion: 2
         x: 457
@@ -190,7 +190,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Number_5
+      name: 5
       rect:
         serializedVersion: 2
         x: 746
@@ -211,7 +211,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Number_4
+      name: 4
       rect:
         serializedVersion: 2
         x: 5
@@ -232,7 +232,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Number_6
+      name: 6
       rect:
         serializedVersion: 2
         x: 313
@@ -248,48 +248,6 @@ TextureImporter:
       bones: []
       spriteID: 540ff1f9d0da4ae90800000000000000
       internalID: -7015292045520539579
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Number_7
-      rect:
-        serializedVersion: 2
-        x: 623
-        y: 346
-        width: 395
-        height: 273
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 4956beaf7d1b0a6f0800000000000000
-      internalID: -675344402919758444
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Number_8
-      rect:
-        serializedVersion: 2
-        x: 623
-        y: 5
-        width: 394
-        height: 269
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 09551f8edb63b3130800000000000000
-      internalID: 3547489320769246608
       vertices: []
       indices: 
       edges: []

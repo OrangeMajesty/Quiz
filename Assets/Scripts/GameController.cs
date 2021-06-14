@@ -7,17 +7,32 @@ using UnityEngine.UI;
 
 public class GameController : MonoBehaviour
 {
+    // Количество элементов в строке
+    const int ROW_LIGHT = 3;
+
+    // Макс. уровень
+    const int MAX_LEVEL = 3;
+
     // prefab
     public GameObject block;
 
+    // Меню
+    public GameObject finishGamePanel;
+    public GameObject pauseGamePanel;
+
     // Количество отображаемых объектов
-    public int count; 
+    private int count; 
 
     private float offsetY = 0;
     private float offsetX = 0;
 
     // Группы спрайтов
     private Dictionary<string, Dictionary<string, Object>> packs;
+
+    // Хранит выбранные спрайты
+    private Dictionary<string, GameObject> loadedSprites;
+
+    // Выбранная группа
     string currentType;
 
     // Компонент вывода задачи
@@ -26,7 +41,14 @@ public class GameController : MonoBehaviour
     // Задача для игрока
     private string target;
 
+    // Текущий уровень
     private int level;
+
+    // Текущий номер задачи в уровне
+    private int taskInLevel;
+
+    // Количество заданий в уровне
+    public int countTaskInLevel;
 
     // Start is called before the first frame update
     void Start()
@@ -39,9 +61,23 @@ public class GameController : MonoBehaviour
 
         // Сброс задания для игрока
         if(!(task is null))
-            task.text = "...";
+            task.text = "";
+
+        loadedSprites = new Dictionary<string, GameObject>();
 
         // Загрузка спрайтов
+        LoadSpritesPack();
+
+        // Установка уровня
+        ChangeLevel(1);
+
+        // Загрузка уровня
+        RestartScene();
+    }
+    
+    // Загрузка спрайтов
+    private void LoadSpritesPack()
+    {
         string pathToPacks = "Sprites/Packs/";
         string pathToResources = "Assets/Resources/" + pathToPacks;
         packs = new Dictionary<string, Dictionary<string, Object>>();
@@ -70,19 +106,84 @@ public class GameController : MonoBehaviour
             }
 
         }
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
         
-        // todo: Случайный выбор типа
-        currentType = "Letter";
+    }
+
+    // Обработчик клика по спрайтам
+    void HandlerClickToSprite(GameObject obj)
+    {
+        BlockController controller = obj.GetComponent<BlockController>();
+
+        if(controller.key == target) {
+            UpLevel();
+        }
+    }
+
+    // Повышает сложность
+    private void UpLevel()
+    {
+        // Проверяем на возможные ошибки
+        if(countTaskInLevel < 0)
+            countTaskInLevel = 3;
+
+        if(level <= MAX_LEVEL) {
+            if(taskInLevel < 0) {
+                taskInLevel = 1;
+            } else {
+                if(++taskInLevel >= countTaskInLevel) {
+                    ChangeLevel(level + 1);
+                } else {
+                    RestartScene();
+                }
+            }
+         } else {
+            FinishGame();
+         }
+    }
+
+    // Смена уровня
+    private void ChangeLevel(int number = 1)
+    {
+        level = number;
+        count = level * ROW_LIGHT;
+        taskInLevel = 0;
+        
+        if(level <= MAX_LEVEL) {
+            RestartScene();
+        } else {
+            FinishGame();
+        }
+    }
+
+    // Удаление ранее загруженых объектов
+    private void RemoveSprites()
+    {
+        foreach (GameObject loadedSprite in loadedSprites.Values) {
+            Object.Destroy(loadedSprite);
+        }
+    }
+
+    // Перезагрузка сцены
+    private void RestartScene()
+    {
+        // Удаление ранее загруженых объектов
+        RemoveSprites();
+
+        var types = packs.Keys.ToList();
+        currentType = types[Random.Range(0, types.Count)];
+
         var currentPack = packs[currentType];
         List<string> currentPackKeysList = new List<string>(currentPack.Keys);
 
         float screenWidth = Screen.width;
         float screenHeight = Screen.height;
 
-        // Количество элементов в строке
-        int rowLenght = 3;
-
-        if(rowLenght == 0) {
+        if(ROW_LIGHT == 0) {
             Debug.Log("Не определено кол-во элементов в строке");
             return;
         }
@@ -92,14 +193,14 @@ public class GameController : MonoBehaviour
 
         // Находим смещение относительно 0
         offsetX = sizeBlockX;
-        offsetY = (sizeBlockY * ((count / rowLenght) -1)) / 2;
+        offsetY = (sizeBlockY * ((count / ROW_LIGHT) -1)) / 2;
 
         // Хранит выбранные спрайты
         var selectBlockKeys = new List<string>();
 
         // Раставляем блоки
-        for (int y = 0; y < count / rowLenght; y++) {
-            for (int x = 0; x < rowLenght; x++) {
+        for (int y = 0; y < count / ROW_LIGHT; y++) {
+            for (int x = 0; x < ROW_LIGHT; x++) {
                 GameObject item = Instantiate(block, new Vector3(0, 0, 0), Quaternion.identity) as GameObject;
                 item.transform.SetParent(this.transform);
                 item.GetComponent<RectTransform>().localScale = new Vector3(sizeBlockX, sizeBlockY, 1);
@@ -114,12 +215,18 @@ public class GameController : MonoBehaviour
                     if(selectBlockKeys.IndexOf(currentKey) == -1)
                         break;
                 }
+
+                // Установка значения блока
+                item.GetComponent<BlockController>().key = currentKey;
                 
                 GameObject child = item.transform.GetChild(0).gameObject;
                 child.GetComponent<SpriteRenderer>().sprite = (Sprite)currentPack[currentKey];
 
+                item.GetComponent<Button>().onClick.AddListener(() => HandlerClickToSprite(item));
+
                 // Запоминаем что выбрали
                 selectBlockKeys.Add(currentKey);
+                loadedSprites[currentKey] = item;
             }      
         }
 
@@ -128,20 +235,50 @@ public class GameController : MonoBehaviour
 
         // Назначаем задачу игроку
         if(!(task is null))
-            task.text = "Find " + target;
-        
-
+            task.text = "Найдите " + target;
     }
 
-    // Update is called once per frame
-    void Update()
+    // Завершение игры
+    private void FinishGame()
     {
-        
+        // Сброс задания для игрока
+        if(!(task is null))
+            task.text = "";
+
+        // Удаление ранее загруженых объектов
+        RemoveSprites();
+
+        finishGamePanel.SetActive(true);
+        Debug.Log("Finish Game");
     }
 
-    // Смена уровня
-    private void ChangeLevel(int number = 1)
+    public void ShowPauseGamePanel()
     {
-         
+        pauseGamePanel.SetActive(true);
+        // Pause();
+    }
+
+    
+    public void HidePauseGamePanel()
+    {
+        pauseGamePanel.SetActive(false);
+        // Pause();
+    }
+
+    // public void Pause()
+    // {
+        
+    // }
+
+    // Переход к первой сцене
+    public void GoToHome()
+    {
+        Application.LoadLevel(0);
+    }
+
+    // Перезагрузка уровня
+    public void RestartGame()
+    {
+        Application.LoadLevel(Application.loadedLevel);
     }
 }
