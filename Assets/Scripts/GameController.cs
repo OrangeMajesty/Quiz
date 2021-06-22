@@ -4,6 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
+using UnityEngine.SceneManagement;
+using UnityEngine.Rendering;
+using System.Threading.Tasks;
 
 public class GameController : MonoBehaviour
 {
@@ -25,6 +29,10 @@ public class GameController : MonoBehaviour
 
     private float offsetY = 0;
     private float offsetX = 0;
+
+    // Размер блоков
+    private float sizeBlockX = 400f;
+    private float sizeBlockY = 400f;
 
     // Группы спрайтов
     private Dictionary<string, Dictionary<string, Object>> packs;
@@ -70,9 +78,6 @@ public class GameController : MonoBehaviour
 
         // Установка уровня
         ChangeLevel(1);
-
-        // Загрузка уровня
-        RestartScene();
     }
     
     // Загрузка спрайтов
@@ -108,19 +113,27 @@ public class GameController : MonoBehaviour
         }
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
     // Обработчик клика по спрайтам
     void HandlerClickToSprite(GameObject obj)
     {
         BlockController controller = obj.GetComponent<BlockController>();
-
+        
         if(controller.key == target) {
+            GameObject child = obj.transform.GetChild(0).gameObject;
+
+            // Анимация при верном выборе
+            if(child) {
+                RectTransform objRect = child.GetComponent<RectTransform>();
+                // if(objRect)
+                    // objRect.DOShakeAnchorPos(0.3f, new Vector3(0.2f, 0, 0), 5, 0);
+            }
+
             UpLevel();
+        } else {
+            RectTransform objRect = obj.GetComponent<RectTransform>();
+            // Анимация при не верном выборе
+            if(objRect)
+                objRect.DOShakeAnchorPos(0.3f, new Vector3(10, 0, 0), 10, 0);
         }
     }
 
@@ -161,18 +174,41 @@ public class GameController : MonoBehaviour
     }
 
     // Удаление ранее загруженых объектов
-    private void RemoveSprites()
+    private async Task RemoveSprites()
     {
-        foreach (GameObject loadedSprite in loadedSprites.Values) {
-            Object.Destroy(loadedSprite);
+        var sequences = new List<Sequence>();
+
+        foreach (KeyValuePair<string, GameObject> loadedSprite in loadedSprites) {
+            Sequence sequence = DOTween.Sequence();
+
+            // Анимация перед удалением
+            sequence.Append(loadedSprite.Value.transform.DOScale(new Vector3(sizeBlockX, sizeBlockY, 1), 0.1f));
+            sequence.Append(loadedSprite.Value.transform.DOScale(new Vector3(sizeBlockX-50, sizeBlockY-50, 1), 0.25f));
+            sequence.Append(loadedSprite.Value.transform.DOScale(new Vector3(sizeBlockX+30, sizeBlockY+30, 1), 0.15f));
+            sequence.Append(loadedSprite.Value.transform.DOScale(Vector3.zero, 0.1f).OnComplete(() => {
+                Object.Destroy(loadedSprite.Value);
+                loadedSprites.Remove(loadedSprite.Key);
+            }));
+
+            sequences.Add(sequence);
+        }
+
+        foreach (var sequence in sequences) {
+            sequence.Play();
+        }
+
+        while (loadedSprites.Count > 0) {
+            await Task.Yield();
         }
     }
 
     // Перезагрузка сцены
-    private void RestartScene()
+    private async void RestartScene()
     {
+        task.DOFade(0f, 0.3f);
+
         // Удаление ранее загруженых объектов
-        RemoveSprites();
+        await RemoveSprites();
 
         var types = packs.Keys.ToList();
         currentType = types[Random.Range(0, types.Count)];
@@ -188,23 +224,32 @@ public class GameController : MonoBehaviour
             return;
         }
 
-        float sizeBlockY = 100f;
-        float sizeBlockX = 100f;
-
         // Находим смещение относительно 0
         offsetX = sizeBlockX;
         offsetY = (sizeBlockY * ((count / ROW_LIGHT) -1)) / 2;
 
         // Хранит выбранные спрайты
         var selectBlockKeys = new List<string>();
+        var rectTransforms = new List<RectTransform>();
 
         // Раставляем блоки
         for (int y = 0; y < count / ROW_LIGHT; y++) {
             for (int x = 0; x < ROW_LIGHT; x++) {
                 GameObject item = Instantiate(block, new Vector3(0, 0, 0), Quaternion.identity) as GameObject;
+                
+                RectTransform itemRect = item.GetComponent<RectTransform>();
+                rectTransforms.Add(itemRect);
+                
+                item.GetComponent<Canvas>().sortingOrder = (y * ROW_LIGHT + x) + 1;
                 item.transform.SetParent(this.transform);
-                item.GetComponent<RectTransform>().localScale = new Vector3(sizeBlockX, sizeBlockY, 1);
-                item.GetComponent<RectTransform>().anchoredPosition = new Vector3(offsetX - (sizeBlockX * x), offsetY - (sizeBlockY * y), 0);
+                itemRect.anchoredPosition = new Vector3(offsetX - (sizeBlockX * x), offsetY - (sizeBlockY * y), 1);
+                item.transform.localScale = Vector3.zero;
+
+                Sequence sequence = DOTween.Sequence();
+                sequence.Append(item.transform.DOScale(new Vector3(sizeBlockX+30, sizeBlockY+30, 1), 0.25f));
+                sequence.Append(item.transform.DOScale(new Vector3(sizeBlockX-50, sizeBlockY-50, 1), 0.15f));
+                sequence.Append(item.transform.DOScale(new Vector3(sizeBlockX, sizeBlockY, 1), 0.1f));
+                sequence.Play();
 
                 // Выбор ключа спрайта
                 var currentKey = "";
@@ -220,7 +265,8 @@ public class GameController : MonoBehaviour
                 item.GetComponent<BlockController>().key = currentKey;
                 
                 GameObject child = item.transform.GetChild(0).gameObject;
-                child.GetComponent<SpriteRenderer>().sprite = (Sprite)currentPack[currentKey];
+                child.GetComponent<Image>().sprite = (Sprite)currentPack[currentKey];
+                // child.GetComponent<SpriteRenderer>().sprite = (Sprite)currentPack[currentKey];
 
                 item.GetComponent<Button>().onClick.AddListener(() => HandlerClickToSprite(item));
 
@@ -234,19 +280,23 @@ public class GameController : MonoBehaviour
         target = selectBlockKeys[Random.Range(0, selectBlockKeys.Count)];
 
         // Назначаем задачу игроку
-        if(!(task is null))
+        if(!(task is null)) {
+            task.DOFade(1f, 0.3f);
             task.text = "Найдите " + target;
+        }
+
+        rectTransforms.Clear();
     }
 
     // Завершение игры
-    private void FinishGame()
+    private async void FinishGame()
     {
         // Сброс задания для игрока
         if(!(task is null))
             task.text = "";
 
         // Удаление ранее загруженых объектов
-        RemoveSprites();
+        await RemoveSprites();
 
         finishGamePanel.SetActive(true);
         Debug.Log("Finish Game");
@@ -266,12 +316,12 @@ public class GameController : MonoBehaviour
     // Переход к первой сцене
     public void GoToHome()
     {
-        Application.LoadLevel(0);
+        SceneManager.LoadScene(0);
     }
 
     // Перезагрузка уровня
     public void RestartGame()
     {
-        Application.LoadLevel(Application.loadedLevel);
+        SceneManager.LoadScene(1);
     }
 }

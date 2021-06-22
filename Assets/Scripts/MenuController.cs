@@ -1,13 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class MenuController : MonoBehaviour
 {
     // Загружает игрову
     public void OnStartButton()
     {
-        Application.LoadLevel(1);
+        SceneManager.LoadScene(1);
     }
 
     // Выход
